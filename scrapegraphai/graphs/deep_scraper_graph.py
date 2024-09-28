@@ -101,10 +101,7 @@ class DeepScraperGraph(AbstractGraph):
             input="user_prompt & relevant_links",
             output=["results"],
             node_config={
-                "graph_instance": None,
-                "batchsize": 1,
-                "max_depth": self.config.get("max_depth", 3),
-                "curr_depth": self.curr_depth
+                "graph_instance": None
             }
         )
         merge_answers_node = MergeAnswersNode(

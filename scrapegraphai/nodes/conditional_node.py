@@ -28,13 +28,22 @@ class ConditionalNode(BaseNode):
 
     """
 
-    def __init__(self):
+    def __init__(self, 
+                key_name: str,
+                input: str,
+                output: List[str],
+                node_config: Optional[dict] = None,
+                node_name: str = "ConditionalNode"):
+        
         """
         Initializes an empty ConditionalNode.
         """
+
+        # Initialize the BaseNode with the appropriate arguments
+        super().__init__(node_name, "conditional_node", input, output, 2, node_config)
         
-        #super().__init__(node_name, "node", input, output, 2, node_config)
-        pass
+        # Store the key_name as an attribute
+        self.key_name = key_name
 
 
     def execute(self, state: dict) -> dict:
@@ -48,4 +57,19 @@ class ConditionalNode(BaseNode):
             str: The name of the next node to execute based on the presence of the key.
         """
 
-        pass
+        # Ensure exactly two edges are connected
+        connected_nodes = self.get_connected_nodes()
+        if len(connected_nodes) != 2:
+            raise ValueError("ConditionalNode must have exactly two connected nodes.")
+
+        # Check if the key exists and has a non-empty value
+        value = state.get(self.key_name)
+        if value:
+            # Proceed to the first connected node
+            next_node = connected_nodes[0]
+        else:
+            # Proceed to the second connected node
+            next_node = connected_nodes[1]
+
+        # Execute the next node with the current state
+        return next_node.execute(state)

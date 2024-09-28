@@ -37,8 +37,6 @@ class GraphIteratorNode(BaseNode):
         self.verbose = (
             False if node_config is None else node_config.get("verbose", False)
         )
-        self.max_depth = node_config.get("max_depth", 3) 
-        self.curr_depth = node_config.get("curr_depth", 0)
 
     def execute(self, state: dict) -> dict:
         """
@@ -90,11 +88,6 @@ class GraphIteratorNode(BaseNode):
         Raises:
             KeyError: If the input keys are not found in the state.
         """
-
-        # Stop iteration if max_depth is reached
-        if self.curr_depth >= self.max_depth:
-            self.logger.info(f"Max depth {self.max_depth} reached. Stopping further iterations.")
-            return state
         
         # interprets input keys based on the provided input expression
         input_keys = self.get_input_keys(state)
@@ -105,18 +98,16 @@ class GraphIteratorNode(BaseNode):
         user_prompt = input_data[0]
         urls = input_data[1]
 
-        if not urls:
-            self.logger.info("No relevant links found, passing the current answer up the chain.")
-            # Directly pass the answer from the state to results
-            state.update({self.output[0]: [state.get("answer", "No answer found")]})
-            return state
-
         graph_instance = self.node_config.get("graph_instance", None)
 
         if graph_instance is None:
             raise ValueError("graph instance is required for concurrent execution")
 
-        next_depth = self.curr_depth + 1
+        # Assign depth level to the graph
+        if "graph_depth" in graph_instance.config:
+            graph_instance.config["graph_depth"] += 1
+        else:
+            graph_instance.config["graph_depth"] = 1
 
         graph_instance.prompt = user_prompt
 
@@ -133,7 +124,6 @@ class GraphIteratorNode(BaseNode):
         for url in urls:
             instance = copy.copy(graph_instance)
             instance.source = url
-            instance.curr_depth = next_depth
             if url.startswith("http"):
                 instance.input_key = "url"
             participants.append(instance)

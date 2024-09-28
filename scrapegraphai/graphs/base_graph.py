@@ -53,7 +53,6 @@ class BaseGraph:
         self.entry_point = entry_point.node_name
         self.graph_name = graph_name
         self.initial_state = {}
-        self.shared_state = {}
 
         if nodes[0].node_name != entry_point.node_name:
             # raise a warning if the entry point is not the first node in the list
@@ -93,9 +92,6 @@ class BaseGraph:
         """
         current_node_name = self.entry_point
         state = initial_state
-        self.shared_state["source_url"] = state["url"]
-        # self.shared_state["seen_links"].update(state["url"])
-        state["shared_state"] = self.shared_state
 
         # variables for tracking execution info
         total_exec_time = 0.0
@@ -120,8 +116,6 @@ class BaseGraph:
         while current_node_name:
             curr_time = time.time()
             current_node = next(node for node in self.nodes if node.node_name == current_node_name)
-
-            state["shared_state"] = self.shared_state
 
             # check if there is a "source" key in the node config
             if current_node.__class__.__name__ == "FetchNode":
@@ -209,8 +203,6 @@ class BaseGraph:
                 cb_total["completion_tokens"] += cb_data["completion_tokens"]
                 cb_total["successful_requests"] += cb_data["successful_requests"]
                 cb_total["total_cost_USD"] += cb_data["total_cost_USD"]
-
-            self.shared_state = state["shared_state"]
             
             if current_node.node_type == "conditional_node":
                 current_node_name = result
@@ -262,11 +254,7 @@ class BaseGraph:
         """
 
         self.initial_state = initial_state
-        
-        source_url = initial_state.get("source_url", None)
-        if source_url:
-            self.shared_state["source_url"] = source_url
-
+            
         if self.use_burr:
 
             bridge = BurrBridge(self, self.burr_config)
